@@ -22,11 +22,18 @@
         body {
             display: flex;
             justify-content: center;
+            overflow-y: hidden;
         }
 
+        hr {
+            width: 100%;
+        }
 
         .main {
             width: var(--main-width);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
         }
 
         .tools {
@@ -52,10 +59,17 @@
         }
 
 
+        .container {
+            overflow-y: scroll;
+        }
+
+
         .crypto {
             height: 4em;
             background-color: whitesmoke;
             display: flex;
+        }
+        .crypto:nth-child(n+2) {
             margin: 0.5em 0;
         }
         .crypto.favourite .status {
