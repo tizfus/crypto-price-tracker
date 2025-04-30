@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto price tracker</title>
+    <style>
+        :root {
+            --favourite: greenyellow;
+            --unfavourite: darkred;
+            --main-width: 40em;
+        }
+
+
+        * {
+            font-size: large;
+            font-family: 'Sans Serif';
+            box-sizing: border-box;
+        }
+        
+
+        body {
+            display: flex;
+            justify-content: center;
+        }
+
+
+        .main {
+            width: var(--main-width);
+        }
+
+        .tools {
+            display: flex;
+            flex-direction: row;
+        }
+
+        .tools > * {
+            height: 2em;
+        }
+
+        .tools > *:first-child {
+            margin-right: 0.5em;
+        }
+        .tools > *:last-child {
+            margin-left: 0.5em;
+        }
+
+        .tools button {
+            padding: 0 0.5em;
+            border: none;
+            flex-grow: 1;
+        }
+
+
+        .crypto {
+            height: 4em;
+            background-color: whitesmoke;
+            display: flex;
+            margin: 0.5em 0;
+        }
+        .crypto.favourite .status {
+            background-color: var(--favourite);
+        }
+
+        .crypto .description {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-grow: 1;
+            padding: 1em;
+        }
+
+        .crypto .status {
+            cursor: pointer;
+            background-color: var(--unfavourite);
+            width: 2em;
+            height: 100%;
+        }
+
+        .crypto .status:hover {
+            box-shadow: 0px 0px 4px gray;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="main">
+        <div class="tools">
+            <button onclick="onUpdateClick()">Update</button>
+            <button onclick="onExportClick()">Export</button>
+        </div>
+        <hr>
+        <div class="container"></div>
+    </div>
+</body>
+
+<script>
+    const elementContainer = document.querySelector('.main .container');
+
+
+    function onUpdateClick(){
+        elementContainer.innerHTML = "";
+        loadCryptosAsync();
+    }
+    function onExportClick(){
+        const values = [];
+        
+        const Container = document.querySelectorAll('.crypto.favourite .description')
+        for (const crypto of Container) {
+            values.push(`${crypto.querySelector(".symbol").textContent}\t${crypto.querySelector(".price").textContent}`);
+        }
+
+        navigator.clipboard.writeText(values.join('\n'));
+
+        alert('favourite cryptos copied to clipboard')
+    }
+
+
+    function getfavourites(){
+        return (localStorage["favourites"]?.split(',') ?? [])
+            .filter(item => item)
+    }
+    function isfavourite(symbol){
+        return getfavourites().includes(symbol)
+    }
+    function addfavourite(symbol){
+        localStorage["favourites"] = [...getfavourites(), symbol];
+    }
+    function removefavourite(symbol){
+        localStorage["favourites"] = getfavourites().filter(value => value !== symbol);
+    }
+
+
+    function createCrypto({symbol, price, favourite}) {
+        const crypto = document.createElement('div')
+        crypto.classList.add('crypto');
+
+        if(favourite) {
+            crypto.classList.add('favourite');
+        }
+
+        crypto.innerHTML = 
+`<div class="description">
+    <span class="symbol">${symbol}</span><span class="price">${price}</span>
+</div>
+<div class="status"></div>`;
+
+        crypto.getElementsByClassName('status')[0].onclick = function(){
+            if(crypto.classList.contains('favourite')) {
+                crypto.classList.remove('favourite');
+                removefavourite(symbol);
+                return;
+            }
+            
+            crypto.classList.add('favourite');
+            addfavourite(symbol);
+        }
+
+        return crypto
+    }
+    function addCryptos(cryptos) {
+        cryptos
+            .map(crypto => { return { ...crypto, favourite: isfavourite(crypto.symbol)} })
+            .sort((crypto1, crypto2) =>
+                crypto1.favourite && !crypto2.favourite ? -1 :
+                !crypto1.favourite && crypto2.favourite ? 1 :
+                crypto1.symbol < crypto2.symbol ? -1 :
+                crypto1.symbol > crypto2.symbol ? 1 : 
+                0)
+            .forEach(crypto => elementContainer.append(createCrypto(crypto)));
+    }
+
+
+    async function getCryptosAsync() {
+        const xhr = new XMLHttpRequest()
+        return new Promise((resolve, reject) => {
+            xhr.open("GET", "https://api.binance.com/api/v3/ticker/price")
+            xhr.send()
+            xhr.onload = function() {
+                if(xhr.status !== 200) {
+                    reject(xhr.response)
+                    return;
+                }
+
+                resolve(
+                    JSON.parse(xhr.responseText)
+                );
+            }
+
+            xhr.onerror = reject
+        });
+    }
+    async function loadCryptosAsync(){
+        elementContainer.innerHTML = '<div class="loading">Loading...</div>'
+        const cryptos = await getCryptosAsync().catch(console.error)
+        elementContainer.innerHTML = "";
+        addCryptos(cryptos)
+    }
+
+    loadCryptosAsync()
+
+</script>
+</html>
