@@ -112,22 +112,22 @@
 
         navigator.clipboard.writeText(values.join('\n'));
 
-        alert('favourite cryptos copied to clipboard')
+        alert('Favourite cryptos copied to clipboard')
     }
 
 
-    function getfavourites(){
+    function getFavourites(){
         return (localStorage["favourites"]?.split(',') ?? [])
             .filter(item => item)
     }
-    function isfavourite(symbol){
-        return getfavourites().includes(symbol)
+    function isFavourite(symbol){
+        return getFavourites().includes(symbol)
     }
-    function addfavourite(symbol){
-        localStorage["favourites"] = [...getfavourites(), symbol];
+    function addFavourite(symbol){
+        localStorage["favourites"] = [...getFavourites(), symbol];
     }
-    function removefavourite(symbol){
-        localStorage["favourites"] = getfavourites().filter(value => value !== symbol);
+    function removeFavourite(symbol){
+        localStorage["favourites"] = getFavourites().filter(value => value !== symbol);
     }
 
 
@@ -148,19 +148,19 @@
         crypto.getElementsByClassName('status')[0].onclick = function(){
             if(crypto.classList.contains('favourite')) {
                 crypto.classList.remove('favourite');
-                removefavourite(symbol);
+                removeFavourite(symbol);
                 return;
             }
             
             crypto.classList.add('favourite');
-            addfavourite(symbol);
+            addFavourite(symbol);
         }
 
         return crypto
     }
     function addCryptos(cryptos) {
         cryptos
-            .map(crypto => { return { ...crypto, favourite: isfavourite(crypto.symbol)} })
+            .map(crypto => { return { ...crypto, favourite: isFavourite(crypto.symbol)} })
             .sort((crypto1, crypto2) =>
                 crypto1.favourite && !crypto2.favourite ? -1 :
                 !crypto1.favourite && crypto2.favourite ? 1 :
